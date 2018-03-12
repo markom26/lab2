@@ -156,6 +156,7 @@ architecture rtl of top is
   signal dir_blue            : std_logic_vector(7 downto 0);
   signal dir_pixel_column    : std_logic_vector(10 downto 0);
   signal dir_pixel_row       : std_logic_vector(10 downto 0);
+  signal dir_color           : std_logic_vector(23 downto 0);
 
 begin
 
@@ -250,11 +251,27 @@ begin
   --dir_red
   --dir_green
   --dir_blue
- 
+	dir_color <= x"000000"  when dir_pixel_column >= 0 and dir_pixel_column < H_RES/8 else
+					 x"FE2E2E"  when  dir_pixel_column >= H_RES/8 and dir_pixel_column < 2*H_RES/8 else
+					 x"00FF00"  when  dir_pixel_column >= 2*H_RES/8 and dir_pixel_column < 3*H_RES/8 else
+					 x"0000FF"  when  dir_pixel_column >= 3*H_RES/8 and dir_pixel_column < 4*H_RES/8 else
+					 x"FFFF00"  when  dir_pixel_column >= 4*H_RES/8 and dir_pixel_column < 5*H_RES/8 else
+					 x"D8D8D8"  when  dir_pixel_column >= 5*H_RES/8 and dir_pixel_column < 6*H_RES/8 else
+					 x"58FAF4"  when  dir_pixel_column >= 6*H_RES/8 and dir_pixel_column < 7*H_RES/8 else
+					 x"FFFFFF"; -- when  dir_pixel_row >= 7*H_RES/8 and dir_pixel_row < H_RES 
+					
+  dir_red <= dir_color(23 downto 16);
+  dir_green <= dir_color(15 downto 8);
+  dir_blue <= dir_color(7 downto 0) ;
+  
   -- koristeci signale realizovati logiku koja pise po TXT_MEM
   --char_address
   --char_value
   --char_we
+  
+   char_we <= '1';
+  
+	
   
   -- koristeci signale realizovati logiku koja pise po GRAPH_MEM
   --pixel_address
