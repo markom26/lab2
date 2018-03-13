@@ -258,7 +258,7 @@ begin
 					 x"FFFF00"  when  dir_pixel_column >= 4*H_RES/8 and dir_pixel_column < 5*H_RES/8 else
 					 x"D8D8D8"  when  dir_pixel_column >= 5*H_RES/8 and dir_pixel_column < 6*H_RES/8 else
 					 x"58FAF4"  when  dir_pixel_column >= 6*H_RES/8 and dir_pixel_column < 7*H_RES/8 else
-					 x"FFFFFF"; -- when  dir_pixel_row >= 7*H_RES/8 and dir_pixel_row < H_RES 
+					 x"FFFFFF"; -- when  dir_pixel_column >= 7*H_RES/8 and dir_pixel_column < H_RES 
 					
   dir_red <= dir_color(23 downto 16);
   dir_green <= dir_color(15 downto 8);
@@ -270,7 +270,23 @@ begin
   --char_we
   
    char_we <= '1';
-  
+   
+   char_value <= "001101" when char_address = 5 else      -- m
+	             "000001" when char_address = 6 else      -- a
+					 "010010" when char_address = 7 else  -- r
+					 "001011" when char_address = 8 else  -- k
+	             "001111" when char_address = 9 else      -- o
+					 "100000" when char_address = 10 else --
+	             "001101" when char_address = 11 else     -- m
+					 "001001" when char_address = 12 else -- i
+					 "001100" when char_address = 13 else -- l
+	             "001111" when char_address = 14 else     -- o
+					 "010011" when char_address = 15 else -- s
+	             "000101" when char_address = 16 else     -- e
+					 "010110" when char_address = 17 else -- v
+					 "001001" when char_address = 18 else -- i
+	             "000011" when char_address = 19 else     -- c
+					 "100000";
 	
   
   -- koristeci signale realizovati logiku koja pise po GRAPH_MEM
