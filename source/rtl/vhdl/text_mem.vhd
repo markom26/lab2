@@ -42,7 +42,7 @@ architecture arc_text_mem of text_mem is
   --        0 => "000000",
   --        1 => "000001",
   --        2 => "000010",
-          others => (others => '0')
+          others => "100000"
           );
   
 begin

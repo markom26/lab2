@@ -157,6 +157,12 @@ architecture rtl of top is
   signal dir_pixel_column    : std_logic_vector(10 downto 0);
   signal dir_pixel_row       : std_logic_vector(10 downto 0);
   signal dir_color           : std_logic_vector(23 downto 0);
+  signal counter : std_logic_vector(13 downto 0);
+ -- signal temp                : std_logic_vector(7 downto 0);
+  signal temp		  : std_logic_vector(MEM_ADDR_WIDTH-1 downto 0);
+  signal temp1		  : std_logic_vector(GRAPH_MEM_DATA_WIDTH-1 downto 0);
+  signal enable_char : std_logic_vector(30 downto 0);
+  signal enable_pixel : std_logic_vector(30 downto 0);
 
 begin
 
@@ -169,11 +175,11 @@ begin
   graphics_lenght <= conv_std_logic_vector(MEM_SIZE*8*8, GRAPH_MEM_ADDR_WIDTH);
   
   -- removed to inputs pin
-  direct_mode <= '1';
-  display_mode     <= "10";  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
+  direct_mode <= '0';
+  display_mode     <= "01";  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
   
   font_size        <= x"1";
-  show_frame       <= '1';
+  show_frame       <= '0';
   foreground_color <= x"FFFFFF";
   background_color <= x"000000";
   frame_color      <= x"FF0000";
@@ -251,48 +257,166 @@ begin
   --dir_red
   --dir_green
   --dir_blue
-	dir_color <= x"000000"  when dir_pixel_column >= 0 and dir_pixel_column < H_RES/8 else
+ dir_color <= x"000000"  when dir_pixel_column >= 0 and dir_pixel_column < H_RES/8 else
 					 x"FE2E2E"  when  dir_pixel_column >= H_RES/8 and dir_pixel_column < 2*H_RES/8 else
 					 x"00FF00"  when  dir_pixel_column >= 2*H_RES/8 and dir_pixel_column < 3*H_RES/8 else
 					 x"0000FF"  when  dir_pixel_column >= 3*H_RES/8 and dir_pixel_column < 4*H_RES/8 else
 					 x"FFFF00"  when  dir_pixel_column >= 4*H_RES/8 and dir_pixel_column < 5*H_RES/8 else
 					 x"D8D8D8"  when  dir_pixel_column >= 5*H_RES/8 and dir_pixel_column < 6*H_RES/8 else
 					 x"58FAF4"  when  dir_pixel_column >= 6*H_RES/8 and dir_pixel_column < 7*H_RES/8 else
-					 x"FFFFFF"; -- when  dir_pixel_column >= 7*H_RES/8 and dir_pixel_column < H_RES 
+					 x"FFFFFF"; -- when  dir_pixel_row >= 7*H_RES/8 and dir_pixel_row < H_RES 
 					
   dir_red <= dir_color(23 downto 16);
   dir_green <= dir_color(15 downto 8);
   dir_blue <= dir_color(7 downto 0) ;
-  
+ 
   -- koristeci signale realizovati logiku koja pise po TXT_MEM
   --char_address
   --char_value
   --char_we
   
-   char_we <= '1';
-   
-   char_value <= "001101" when char_address = 5 else      -- m
-	             "000001" when char_address = 6 else      -- a
-				 "010010" when char_address = 7 else      -- r
-				 "001011" when char_address = 8 else      -- k
-	             "001111" when char_address = 9 else      -- o
-				 "100000" when char_address = 10 else     --
-	             "001101" when char_address = 11 else     -- m
-				 "001001" when char_address = 12 else     -- i
-				 "001100" when char_address = 13 else     -- l
-	             "001111" when char_address = 14 else     -- o
-				 "010011" when char_address = 15 else     -- s
-	             "000101" when char_address = 16 else     -- e
-				 "010110" when char_address = 17 else     -- v
-				 "001001" when char_address = 18 else     -- i
-	             "000011" when char_address = 19 else     -- c
-				 "100000";
+  char_we <= '1';
+--	process (pix_clock_s) begin
+--	 if (rising_edge(pix_clock_s)) then
+--		  if (char_address = 4799) then --if (char_address = "1001011000000") then
+--			 char_address <= (others => '0');
+--		  else
+--			 char_address <= char_address + 1;
+--		end if;
+--	  end if;
+-- end process;
+--	 
+--  char_value <= "001101" when char_address = 85 else  --m
+--	             "000001" when char_address = 86 else   --a
+--					 "010010" when char_address = 87 else --r
+--					 "001011" when char_address = 88 else  --k
+--	             "001111" when char_address = 89 else --o
+--					 "100000" when char_address = 90 else --
+--	             "001101" when char_address = 91 else  --m
+--					 "001001" when char_address = 92 else  --i
+--					 "001100" when char_address = 93 else  --l
+--	             "001111" when char_address = 94 else  --o
+--					 "010011" when char_address = 95 else --s
+--	             "000101" when char_address = 96 else --e
+--					 "010110" when char_address = 97 else  --v
+--					 "001001" when char_address = 98 else  --i
+--	             "000011" when char_address = 99 else  --c
+--					 "100000";
+--  
+  
+--------------------POMJERANJE-----------------------				
+	process(pix_clock_s, reset_n_i)
+	begin
+		if reset_n_i = '0' then
+			char_address <= (others => '0');
+			temp <= (others => '0');
+			enable_char <= (others => '0');
+		elsif rising_edge(pix_clock_s) then
+		   if enable_char = 2000000 then
+				if temp < 60 then
+					temp <= temp + 1;
+				else
+					temp <= (others => '0');
+				end if;
+				enable_char <= (others => '0');
+			else
+				enable_char <= enable_char + 1;
+			end if;
+			if char_address < 4800 then
+				char_address <= char_address + 1;
+			else
+				char_address <= (others => '0');
+			end if;
+		end if;
+	end process;	
 	
+	char_value <=  "001101" when char_address = 85 + temp else      -- m
+						"000001" when char_address = 86 + temp else      -- a
+						"010010" when char_address = 87 + temp else      -- r
+						"001011" when char_address = 88 + temp else      -- k
+						"001111" when char_address = 89 + temp else      -- o
+						"100000" when char_address = 90 + temp else     --
+						"001101" when char_address = 91 + temp else     -- m
+						"001001" when char_address = 92 + temp else     -- i
+						"001100" when char_address = 93 + temp else     -- l
+						"001111" when char_address = 94 + temp else     -- o
+						"010011" when char_address = 95 + temp else     -- s
+						"000101" when char_address = 96 + temp else     -- e
+						"010110" when char_address = 97 + temp else     -- v
+						"001001" when char_address = 98 + temp else     -- i
+						"000011" when char_address = 99 + temp else     -- c
+						"100000";
+--		--------------------------------------------------------------
+ 
   
   -- koristeci signale realizovati logiku koja pise po GRAPH_MEM
   --pixel_address
   --pixel_value
   --pixel_we
-  
+  pixel_we <= '1';
+--  ------------zadatak 4----------------------------------
+--  process (pix_clock_s) begin
+--		 if (rising_edge(pix_clock_s)) then
+--			 if (pixel_address = 9599) then
+--				 pixel_address <= (others => '0');
+--			  else
+--				 pixel_address <= pixel_address + 1;
+--			end if;
+--		  end if;
+--    end process;
+--  
+--  pixel_value <=  "11111111000000000000000000000000" when pixel_address = 5020 else      
+--						"11111111000000000000000000000000" when pixel_address = 5040 else    
+--						"11111111000000000000000000000000" when pixel_address = 5060 else      
+--						"11111111000000000000000000000000" when pixel_address = 5080 else      
+--						"11111111000000000000000000000000" when pixel_address = 5100 else     
+--						"11111111000000000000000000000000" when pixel_address = 5120 else     
+--						"11111111000000000000000000000000" when pixel_address = 5140 else     
+--						"11111111000000000000000000000000" when pixel_address = 5160 else     
+--						"11111111000000000000000000000000" when pixel_address = 5180 else    
+--						"11111111000000000000000000000000" when pixel_address = 5200 else     
+--						"11111111000000000000000000000000" when pixel_address = 5220 else    
+--						"11111111000000000000000000000000" when pixel_address = 5240 else        
+--						"00000000000000000000000000000000";
+						
+--	-----------POMJERANJE-------------------------
+  process(pix_clock_s, reset_n_i)
+	begin
+		if reset_n_i = '0' then
+			pixel_address <= (others => '0');
+			temp1 <= (others => '0');
+			enable_pixel <= (others => '0');
+		elsif rising_edge(pix_clock_s) then
+			if enable_pixel = 2000000 then
+				if temp1 < 20 then
+					temp1 <= temp1 + 1;
+				else
+					temp1 <= (others => '0');
+				end if;
+				enable_pixel <= (others => '0');
+			else
+				enable_pixel <= enable_pixel + 1;
+			end if;
+			if pixel_address < 9600 then
+				pixel_address <= pixel_address + 1;
+			else
+				pixel_address <= (others => '0');
+			end if;
+		end if;
+	end process;	
+	
+	pixel_value <= "11111111000000000000000000000000" when pixel_address = 5020 + temp1 else      
+						"11111111000000000000000000000000" when pixel_address = 5040 + temp1 else    
+						"11111111000000000000000000000000" when pixel_address = 5060 + temp1 else      
+						"11111111000000000000000000000000" when pixel_address = 5080 + temp1 else      
+						"11111111000000000000000000000000" when pixel_address = 5100 + temp1 else     
+						"11111111000000000000000000000000" when pixel_address = 5120 + temp1 else     
+						"11111111000000000000000000000000" when pixel_address = 5140 + temp1 else     
+						"11111111000000000000000000000000" when pixel_address = 5160 + temp1 else     
+						"11111111000000000000000000000000" when pixel_address = 5180 + temp1 else    
+						"11111111000000000000000000000000" when pixel_address = 5200 + temp1 else     
+						"11111111000000000000000000000000" when pixel_address = 5220 + temp1 else    
+						"11111111000000000000000000000000" when pixel_address = 5240 + temp1 else        
+						"00000000000000000000000000000000";
   
 end rtl;
